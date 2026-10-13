@@ -25,9 +25,9 @@ jobs:
       id-token: write # required for AWS OIDC authentication
       contents: read
 
-    defaults:
-      run:
-        working-directory: ${{ env.TF_WORKING_DIR }}
+    # defaults:
+    #   run:
+    #     working-directory: ${{ env.TF_WORKING_DIR }}
 
     steps:
       - name: Checkout
