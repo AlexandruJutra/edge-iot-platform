@@ -60,6 +60,48 @@ jobs:
         if: inputs.action == 'apply' || inputs.action == 'plan-apply'
         run: terraform apply -input=false -auto-approve
 
+      - name: Connect runner to Tailscale
+        if: inputs.action == 'apply' || inputs.action == 'plan-apply'
+        uses: tailscale/github-action@v3
+        with:
+          authkey: ${{ secrets.TS_AUTHKEY }}
+          tags: tag:github-actions
+
+      - name: Set up SSH
+        if: inputs.action == 'apply' || inputs.action == 'plan-apply'
+        env:
+          DEVICE_SSH_PRIVATE_KEY: ${{ secrets.DEVICE_SSH_PRIVATE_KEY }}
+          DEVICE_KNOWN_HOSTS: ${{ secrets.DEVICE_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEVICE_SSH_PRIVATE_KEY" > ~/.ssh/device_key
+          chmod 600 ~/.ssh/device_key
+          printf '%s\n' "$DEVICE_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Copy certificates to Raspberry Pi
+        if: inputs.action == 'apply' || inputs.action == 'plan-apply'
+        env:
+          DEVICE_HOST: ${{ secrets.DEVICE_HOST }}
+          DEVICE_SSH_USER: ${{ secrets.DEVICE_SSH_USER }}
+        run: |
+          ssh -i ~/.ssh/device_key \
+            -o StrictHostKeyChecking=yes \
+            "$DEVICE_SSH_USER@$DEVICE_HOST" \
+            'mkdir -p ~/edge-iot/certs && chmod 700 ~/edge-iot/certs'
+
+          scp -i ~/.ssh/device_key \
+            -o StrictHostKeyChecking=yes \
+            certs/device.pem.crt \
+            certs/private.pem.key \
+            certs/AmazonRootCA1.pem \
+            "$DEVICE_SSH_USER@$DEVICE_HOST:~/edge-iot/certs/"
+
+          ssh -i ~/.ssh/device_key \
+            -o StrictHostKeyChecking=yes \
+            "$DEVICE_SSH_USER@$DEVICE_HOST" \
+            'chmod 600 ~/edge-iot/certs/*'
+
       - name: Terraform destroy
         if: inputs.action == 'destroy'
         run: terraform destroy -input=false -auto-approve
