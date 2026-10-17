@@ -56,6 +56,18 @@ python dht22_read.py
 In the AWS Console → IoT Core → **MQTT test client**, subscribe to
 `edge/dht22/telemetry` to see the JSON messages.
 
+## GitHub Actions deployment
+
+The Terraform workflow uses a Tailscale OAuth client to connect to the edge
+device. Configure an OAuth client with the `auth_keys` scope and permission to
+use `tag:github-actions`, then add these as GitHub Actions repository secrets:
+
+- `TS_OAUTH_CLIENT_ID`
+- `TS_OAUTH_SECRET`
+
+The previous `TS_AUTHKEY` secret is no longer used by the workflow and can be
+removed.
+
 ## Cleanup
 
 ```bash
