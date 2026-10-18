@@ -18,6 +18,16 @@ output "certs_directory" {
   value       = "${path.module}/${var.certs_output_dir}"
 }
 
+output "telemetry_table_name" {
+  description = "DynamoDB table that stores IoT telemetry."
+  value       = aws_dynamodb_table.telemetry.name
+}
+
+output "telemetry_rule_name" {
+  description = "IoT rule that writes telemetry messages to DynamoDB."
+  value       = aws_iot_topic_rule.telemetry_to_dynamodb.name
+}
+
 # ATS data endpoint for MQTT connections.
 data "aws_iot_endpoint" "ats" {
   endpoint_type = "iot:Data-ATS"

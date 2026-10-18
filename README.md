@@ -1,9 +1,9 @@
 # Edge → AWS IoT Core (DHT22)
 
 Small Terraform project that provisions an AWS IoT Core **thing**, an X.509
-**certificate** for MQTT (mutual TLS) and an IoT **policy** with full IoT
-permissions. The Python edge script reads a DHT22 sensor and publishes
-temperature + humidity to AWS IoT Core.
+**certificate** for MQTT (mutual TLS), an IoT **policy**, and a DynamoDB table
+for telemetry. An IoT rule stores messages published to
+`edge/dht22/telemetry` in the table.
 
 ## Layout
 
@@ -26,6 +26,9 @@ Terraform writes the device certificate, private key and Amazon Root CA into
 ```bash
 terraform output iot_endpoint
 ```
+
+Telemetry is stored in the `edge-dht22-telemetry` DynamoDB table, using string
+attributes `device_id` and `timestamp` as its partition and sort keys.
 
 > The certificate/keys and `*.tfstate` are git-ignored because they are secrets.
 
