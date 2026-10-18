@@ -103,6 +103,18 @@ jobs:
             "$DEVICE_SSH_USER@$DEVICE_HOST" \
             'chmod 600 ~/edge-iot/certs/*'
 
+      - name: Run data acquisition script in the background on Raspberry Pi
+        if: inputs.action == 'apply' || inputs.action == 'plan-apply'
+        env:
+          DEVICE_HOST: ${{ secrets.DEVICE_HOST }}
+          DEVICE_SSH_USER: ${{ secrets.DEVICE_SSH_USER }}
+        run: |
+          ssh -i ~/.ssh/device_key \
+            -o StrictHostKeyChecking=yes \
+            "$DEVICE_SSH_USER@$DEVICE_HOST" \
+            'nohup bash -c "source /home/alex/.venv/bin/activate && python3 /home/alex/py_scripts/dht22_read.py" > /dev/null 2>&1 &'
+
+  
       - name: Terraform destroy
         if: inputs.action == 'destroy'
         run: terraform destroy -input=false -auto-approve

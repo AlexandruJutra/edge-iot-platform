@@ -20,7 +20,7 @@ CERT_PATH = os.environ.get("IOT_CERT_PATH", "../terraform/certs/device.pem.crt")
 PRIVATE_KEY_PATH = os.environ.get("IOT_PRIVATE_KEY_PATH", "../terraform/certs/private.pem.key")
 ROOT_CA_PATH = os.environ.get("IOT_ROOT_CA_PATH", "../terraform/certs/AmazonRootCA1.pem")
 
-PUBLISH_INTERVAL_S = float(os.environ.get("IOT_PUBLISH_INTERVAL_S", "5"))
+PUBLISH_INTERVAL_S = float(os.environ.get("IOT_PUBLISH_INTERVAL_S", "10"))
 
 
 def build_connection():
