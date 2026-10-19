@@ -1,0 +1,38 @@
+name: Restart Raspberry Pi
+
+on:
+  workflow_dispatch:
+
+jobs:
+  restart:
+    name: Restart Raspberry Pi
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Connect runner to Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:github-actions
+
+      - name: Set up SSH
+        env:
+          DEVICE_SSH_PRIVATE_KEY: ${{ secrets.DEVICE_SSH_PRIVATE_KEY }}
+          DEVICE_KNOWN_HOSTS: ${{ secrets.DEVICE_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEVICE_SSH_PRIVATE_KEY" > ~/.ssh/device_key
+          chmod 600 ~/.ssh/device_key
+          printf '%s\n' "$DEVICE_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Restart Raspberry Pi
+        env:
+          DEVICE_HOST: ${{ secrets.DEVICE_HOST }}
+          DEVICE_SSH_USER: ${{ secrets.DEVICE_SSH_USER }}
+        run: |
+          ssh -i ~/.ssh/device_key \
+            -o StrictHostKeyChecking=yes \
+            "$DEVICE_SSH_USER@$DEVICE_HOST" \
+            'sudo -n systemctl reboot --no-block'
