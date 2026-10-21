@@ -49,9 +49,12 @@ resource "aws_iam_role_policy" "grafana_json_export" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect   = "Allow"
-        Action   = "dynamodb:Query"
-        Resource = aws_dynamodb_table.telemetry.arn
+        Effect = "Allow"
+        Action = [
+          "dynamodb:Query",
+          "dynamodb:Scan",
+        ]
+        Resource = data.aws_dynamodb_table.telemetry.arn
       },
       {
         Effect = "Allow"
@@ -76,7 +79,7 @@ resource "aws_lambda_function" "grafana_json_export" {
 
   environment {
     variables = {
-      TABLE_NAME        = aws_dynamodb_table.telemetry.name
+      TABLE_NAME        = data.aws_dynamodb_table.telemetry.name
       DEFAULT_DEVICE_ID = var.thing_name
       API_KEY           = random_password.grafana_json_export_api_key.result
     }

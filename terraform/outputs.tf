@@ -20,7 +20,7 @@ output "certs_directory" {
 
 output "telemetry_table_name" {
   description = "DynamoDB table that stores IoT telemetry."
-  value       = aws_dynamodb_table.telemetry.name
+  value       = data.aws_dynamodb_table.telemetry.name
 }
 
 output "telemetry_rule_name" {

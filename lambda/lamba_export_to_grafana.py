@@ -13,7 +13,7 @@ class DecimalEncoder(json.JSONEncoder):
 
 # Initialize the DynamoDB resource outside the handler for connection reuse
 dynamodb = boto3.resource('dynamodb')
-TABLE_NAME = os.environ['TABLE_NAME']
+TABLE_NAME = 'edge-dht22-telemetry-DB'
 
 def lambda_handler(event, context):
     table = dynamodb.Table(TABLE_NAME)
@@ -23,6 +23,7 @@ def lambda_handler(event, context):
         response = table.scan()
         return {
             'statusCode': 200,
+            'headers': {'Content-Type': 'application/json'},
             'body': json.dumps(response['Items'], cls=DecimalEncoder),
         }
             
@@ -30,5 +31,6 @@ def lambda_handler(event, context):
         print(f"DynamoDB error: {e.response['Error']['Message']}")
         return {
             'statusCode': 500,
+            'headers': {'Content-Type': 'application/json'},
             'body': json.dumps({'error': e.response['Error']['Message']})
         }

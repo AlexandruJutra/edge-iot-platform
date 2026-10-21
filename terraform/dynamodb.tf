@@ -1,18 +1,15 @@
-resource "aws_dynamodb_table" "telemetry" {
-  name         = "${var.project_name}-telemetry-DB"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "device_id"
-  range_key    = "timestamp"
+# The table holds production data and is managed outside Terraform, so
+# destroy never touches it. Drop it from state without deleting it.
+removed {
+  from = aws_dynamodb_table.telemetry
 
-  attribute {
-    name = "device_id"
-    type = "S"
+  lifecycle {
+    destroy = false
   }
+}
 
-  attribute {
-    name = "timestamp"
-    type = "S"
-  }
+data "aws_dynamodb_table" "telemetry" {
+  name = "${var.project_name}-telemetry-DB"
 }
 
 resource "aws_iam_role" "iot_dynamodb" {
@@ -42,7 +39,7 @@ resource "aws_iam_role_policy" "iot_dynamodb_put_item" {
       {
         Effect   = "Allow"
         Action   = "dynamodb:PutItem"
-        Resource = aws_dynamodb_table.telemetry.arn
+        Resource = data.aws_dynamodb_table.telemetry.arn
       }
     ]
   })
@@ -64,7 +61,7 @@ resource "aws_iot_topic_rule" "telemetry_to_dynamodb" {
     role_arn = aws_iam_role.iot_dynamodb.arn
 
     put_item {
-      table_name = aws_dynamodb_table.telemetry.name
+      table_name = data.aws_dynamodb_table.telemetry.name
     }
   }
 
