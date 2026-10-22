@@ -4,11 +4,6 @@
 # GET /telemetry -> Lambda "GrafanaJsonExport" -> DynamoDB, consumed by
 # Grafana's Infinity data source.
 # ---------------------------------------------------------------------------
-resource "random_password" "grafana_json_export_api_key" {
-  length  = 32
-  special = false
-}
-
 data "archive_file" "grafana_json_export" {
   type        = "zip"
   output_path = "${path.module}/grafana_json_export.zip"
@@ -81,7 +76,6 @@ resource "aws_lambda_function" "grafana_json_export" {
     variables = {
       TABLE_NAME        = data.aws_dynamodb_table.telemetry.name
       DEFAULT_DEVICE_ID = var.thing_name
-      API_KEY           = random_password.grafana_json_export_api_key.result
     }
   }
 
@@ -94,6 +88,12 @@ resource "aws_lambda_function" "grafana_json_export" {
 resource "aws_apigatewayv2_api" "grafana_json_export" {
   name          = "GrafanaJsonExport"
   protocol_type = "HTTP"
+
+  cors_configuration {
+    allow_origins = ["https://${aws_cloudfront_distribution.website.domain_name}"]
+    allow_methods = ["GET"]
+    allow_headers = ["content-type"]
+  }
 }
 
 resource "aws_apigatewayv2_integration" "grafana_json_export" {
@@ -124,12 +124,6 @@ resource "aws_lambda_permission" "grafana_json_export" {
 }
 
 output "grafana_json_export_url" {
-  description = "GET endpoint for Grafana's Infinity data source. Send the API key in the X-Api-Key header."
+  description = "Unauthenticated GET endpoint for telemetry data."
   value       = "${aws_apigatewayv2_stage.grafana_json_export.invoke_url}/telemetry"
-}
-
-output "grafana_json_export_api_key" {
-  description = "Value for the X-Api-Key header. Retrieve with: terraform output -raw grafana_json_export_api_key"
-  value       = random_password.grafana_json_export_api_key.result
-  sensitive   = true
 }

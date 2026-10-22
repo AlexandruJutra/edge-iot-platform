@@ -83,7 +83,7 @@
 
   <footer>Data stored in DynamoDB, visualised with Grafana.</footer>
   <script>
-    fetch('/telemetry', { cache: 'no-store' })
+    fetch('${telemetry_api_url}', { cache: 'no-store' })
       .then(response => {
         if (!response.ok) throw new Error('Telemetry request failed');
         return response.json();
