@@ -127,3 +127,19 @@ jobs:
       - name: Terraform destroy
         if: inputs.action == 'destroy'
         run: terraform destroy -input=false -auto-approve
+
+      - name: Show deployment URLs
+        if: inputs.action == 'apply' || inputs.action == 'plan-apply'
+        run: |
+          WEBSITE_URL="$(terraform output -raw website_url)"
+          API_URL="$(terraform output -raw grafana_json_export_url)"
+
+          printf 'Website URL: %s\n' "$WEBSITE_URL"
+          printf 'API Gateway URL: %s\n' "$API_URL"
+
+          {
+            echo "## Deployment URLs"
+            echo ""
+            echo "- Website: $WEBSITE_URL"
+            echo "- API Gateway: $API_URL"
+          } >> "$GITHUB_STEP_SUMMARY"

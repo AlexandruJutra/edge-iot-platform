@@ -5,7 +5,7 @@ data "aws_caller_identity" "current" {}
 
 locals {
   index_html = templatefile("${path.module}/website/index.html.tftpl", {
-    grafana_embed_url  = var.grafana_embed_url
+    grafana_embed_url = var.grafana_embed_url
     telemetry_api_url = "${aws_apigatewayv2_stage.grafana_json_export.invoke_url}/telemetry"
   })
 }
