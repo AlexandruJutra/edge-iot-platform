@@ -14,8 +14,18 @@ class DecimalEncoder(json.JSONEncoder):
 # Initialize the DynamoDB resource outside the handler for connection reuse
 dynamodb = boto3.resource('dynamodb')
 TABLE_NAME = 'edge-dht22-telemetry-DB'
+API_KEY = os.environ.get('API_KEY')
 
 def lambda_handler(event, context):
+    # API Gateway HTTP API (payload format 2.0) lowercases header names
+    request_key = (event.get('headers') or {}).get('x-api-key')
+    if (not API_KEY) or (request_key != API_KEY):
+        return {
+            'statusCode': 401,
+            'headers': {'Content-Type': 'application/json'},
+            'body': json.dumps({'error': 'Unauthorized'})
+        }
+
     table = dynamodb.Table(TABLE_NAME)
 
     try:

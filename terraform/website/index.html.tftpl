@@ -31,9 +31,26 @@
     .card-header h2 { margin: 0; font-size: 1.05rem; }
     a { color: #5aa9ff; text-decoration: none; }
     a:hover { text-decoration: underline; }
-    iframe { display: block; width: 100%; height: 60vh; min-height: 360px; border: 0; }
+    .grafana-button {
+      display: inline-block;
+      padding: 0.55rem 0.8rem;
+      border-radius: 4px;
+      background: #5aa9ff;
+      color: #0f1419;
+      font-weight: 600;
+    }
+    .grafana-button:hover { background: #83bdff; text-decoration: none; }
+    .readings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: #2a323c; }
+    .reading { padding: 1.25rem; background: #1a2028; }
+    .reading-label { margin: 0 0 0.5rem; color: #8b95a1; font-size: 0.9rem; }
+    .reading-value { margin: 0; font-size: 2rem; font-variant-numeric: tabular-nums; }
+    .reading-status { padding: 0 1rem 1rem; margin: 0; color: #8b95a1; }
     .placeholder { padding: 2rem 1rem; color: #8b95a1; text-align: center; }
     footer { color: #8b95a1; font-size: 0.85rem; text-align: center; }
+    @media (max-width: 520px) {
+      .card-header { align-items: flex-start; gap: 1rem; flex-direction: column; }
+      .readings { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -47,17 +64,43 @@
       <div class="card-header">
         <h2>Temperature &amp; Humidity</h2>
 %{ if grafana_embed_url != "" ~}
-        <a href="${grafana_embed_url}" target="_blank" rel="noopener noreferrer">Open in Grafana</a>
+        <a class="grafana-button" href="${grafana_embed_url}" target="_blank" rel="noopener noreferrer">Open in Grafana</a>
 %{ endif ~}
       </div>
-%{ if grafana_embed_url != "" ~}
-      <iframe src="${grafana_embed_url}" title="Grafana graph" loading="lazy"></iframe>
-%{ else ~}
-      <p class="placeholder">No Grafana panel configured. Set the <code>grafana_embed_url</code> Terraform variable to show the graph here.</p>
-%{ endif ~}
+      <div class="readings" aria-live="polite">
+        <section class="reading">
+          <p class="reading-label">Temperature</p>
+          <p class="reading-value"><span id="temperature">--</span> &deg;C</p>
+        </section>
+        <section class="reading">
+          <p class="reading-label">Humidity</p>
+          <p class="reading-value"><span id="humidity">--</span> %</p>
+        </section>
+      </div>
+      <p class="reading-status" id="reading-status">Loading latest reading...</p>
     </section>
   </main>
 
   <footer>Data stored in DynamoDB, visualised with Grafana.</footer>
+  <script>
+    fetch('/telemetry', { cache: 'no-store' })
+      .then(response => {
+        if (!response.ok) throw new Error('Telemetry request failed');
+        return response.json();
+      })
+      .then(readings => {
+        const latest = readings
+          .filter(reading => Number.isFinite(Date.parse(reading.timestamp)))
+          .sort((first, second) => Date.parse(second.timestamp) - Date.parse(first.timestamp))[0];
+        if (!latest) throw new Error('No telemetry readings found');
+        document.getElementById('temperature').textContent = latest.temperature_c;
+        document.getElementById('humidity').textContent = latest.humidity;
+        document.getElementById('reading-status').textContent =
+          'Latest reading: ' + new Date(latest.timestamp).toLocaleString();
+      })
+      .catch(() => {
+        document.getElementById('reading-status').textContent = 'Unable to load the latest reading.';
+      });
+  </script>
 </body>
 </html>

@@ -23,7 +23,7 @@ variable "certs_output_dir" {
 }
 
 variable "grafana_embed_url" {
-  description = "Grafana panel/dashboard embed URL shown in the static website iframe. Empty shows a placeholder."
+  description = "Grafana panel/dashboard URL opened from the static website. Empty hides the button."
   type        = string
   default     = "https://lankyjungle1504.grafana.net/public-dashboards/35a0ace6a5cd4c3b99083b3190480bee"
 }
