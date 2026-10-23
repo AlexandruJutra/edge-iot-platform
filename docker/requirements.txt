@@ -1,0 +1,5 @@
+rpi-lgpio
+adafruit-blinka
+adafruit-circuitpython-dht
+awscrt
+awsiotsdk
