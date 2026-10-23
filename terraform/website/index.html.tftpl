@@ -47,6 +47,22 @@
     .reading-status { padding: 0 1rem 1rem; margin: 0; color: #8b95a1; }
     .placeholder { padding: 2rem 1rem; color: #8b95a1; text-align: center; }
     footer { color: #8b95a1; font-size: 0.85rem; text-align: center; }
+    .threshold-control {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      color: #8b95a1;
+      font-size: 0.9rem;
+    }
+    .threshold-control input {
+      width: 4.5rem;
+      padding: 0.3rem 0.5rem;
+      background: #1a2028;
+      border: 1px solid #2a323c;
+      border-radius: 4px;
+      color: #e6e8eb;
+    }
     @media (max-width: 520px) {
       .card-header { align-items: flex-start; gap: 1rem; flex-direction: column; }
       .readings { grid-template-columns: 1fr; }
@@ -55,8 +71,12 @@
 </head>
 <body>
   <header>
-    <h1>DHT22 Telemetry</h1>
+    <h1 id="page-title">DHT22 Telemetry</h1>
     <p class="subtitle">Temperature and humidity from the Raspberry Pi sensor.</p>
+    <div class="threshold-control">
+      <label for="cold-threshold">Cold alert below (&deg;C):</label>
+      <input type="number" id="cold-threshold" value="18" step="0.5">
+    </div>
   </header>
 
   <main>
@@ -83,24 +103,50 @@
 
   <footer>Data stored in DynamoDB, visualised with Grafana.</footer>
   <script>
-    fetch('${telemetry_api_url}', { cache: 'no-store' })
-      .then(response => {
-        if (!response.ok) throw new Error('Telemetry request failed');
-        return response.json();
-      })
-      .then(readings => {
-        const latest = readings
-          .filter(reading => Number.isFinite(Date.parse(reading.timestamp)))
-          .sort((first, second) => Date.parse(second.timestamp) - Date.parse(first.timestamp))[0];
-        if (!latest) throw new Error('No telemetry readings found');
-        document.getElementById('temperature').textContent = latest.temperature_c;
-        document.getElementById('humidity').textContent = latest.humidity;
-        document.getElementById('reading-status').textContent =
-          'Latest reading: ' + new Date(latest.timestamp).toLocaleString();
-      })
-      .catch(() => {
-        document.getElementById('reading-status').textContent = 'Unable to load the latest reading.';
-      });
+    const pageTitle = document.getElementById('page-title');
+    const originalTitleText = pageTitle.textContent;
+    const thresholdInput = document.getElementById('cold-threshold');
+    let latestReading = null;
+
+    function updateColdAlert() {
+      if (!latestReading) return;
+      const threshold = parseFloat(thresholdInput.value);
+      if (Number.isFinite(threshold) && latestReading.temperature_c < threshold) {
+        pageTitle.textContent = "\uD83D\uDD25 Pune dom'le pe foc";
+      } else {
+        pageTitle.textContent = originalTitleText;
+      }
+    }
+
+    thresholdInput.addEventListener('input', updateColdAlert);
+
+    const FETCH_INTERVAL_MS = 10 * 60 * 1000;
+
+    function fetchTelemetry() {
+      fetch('${telemetry_api_url}', { cache: 'no-store' })
+        .then(response => {
+          if (!response.ok) throw new Error('Telemetry request failed');
+          return response.json();
+        })
+        .then(readings => {
+          const latest = readings
+            .filter(reading => Number.isFinite(Date.parse(reading.timestamp)))
+            .sort((first, second) => Date.parse(second.timestamp) - Date.parse(first.timestamp))[0];
+          if (!latest) throw new Error('No telemetry readings found');
+          latestReading = latest;
+          document.getElementById('temperature').textContent = latest.temperature_c;
+          document.getElementById('humidity').textContent = latest.humidity;
+          document.getElementById('reading-status').textContent =
+            'Latest reading: ' + new Date(latest.timestamp).toLocaleString();
+          updateColdAlert();
+        })
+        .catch(() => {
+          document.getElementById('reading-status').textContent = 'Unable to load the latest reading.';
+        });
+    }
+
+    fetchTelemetry();
+    setInterval(fetchTelemetry, FETCH_INTERVAL_MS);
   </script>
 </body>
 </html>
