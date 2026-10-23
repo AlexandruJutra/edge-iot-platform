@@ -1,6 +1,8 @@
+import configparser
 import json
 import os
 import time
+from pathlib import Path
 
 import board
 import adafruit_dht
@@ -12,15 +14,22 @@ from awsiot import mqtt_connection_builder
 # Provide these via environment variables (see the Terraform outputs and the
 # generated terraform/certs/ directory).
 # ---------------------------------------------------------------------------
-IOT_ENDPOINT = os.environ["IOT_ENDPOINT"]  # e.g. xxxxx-ats.iot.eu-central-1.amazonaws.com
+IOT_ENDPOINT = "a2ees2p88l8a5j-ats.iot.eu-central-1.amazonaws.com"  # e.g. xxxxx-ats.iot.eu-central-1.amazonaws.com
 CLIENT_ID = os.environ.get("IOT_CLIENT_ID", "edge-dht22-sensor")
 TOPIC = os.environ.get("IOT_TOPIC", "edge/dht22/telemetry")
 
-CERT_PATH = os.environ.get("IOT_CERT_PATH", "../terraform/certs/device.pem.crt")
-PRIVATE_KEY_PATH = os.environ.get("IOT_PRIVATE_KEY_PATH", "../terraform/certs/private.pem.key")
-ROOT_CA_PATH = os.environ.get("IOT_ROOT_CA_PATH", "../terraform/certs/AmazonRootCA1.pem")
+CERT_PATH = os.environ.get("IOT_CERT_PATH", "/home/alex/edge-iot/certs/device.pem.crt")
+PRIVATE_KEY_PATH = os.environ.get("IOT_PRIVATE_KEY_PATH", "/home/alex/edge-iot/certs/private.pem.key")
+ROOT_CA_PATH = os.environ.get("IOT_ROOT_CA_PATH", "/home/alex/edge-iot/certs/AmazonRootCA1.pem")
 
-PUBLISH_INTERVAL_S = float(os.environ.get("IOT_PUBLISH_INTERVAL_S", "10"))
+CONFIG = configparser.ConfigParser()
+CONFIG_PATH = Path(__file__).with_name("config.conf")
+if not CONFIG.read(CONFIG_PATH):
+    raise FileNotFoundError(f"Configuration file not found: {CONFIG_PATH}")
+
+PUBLISH_INTERVAL_S = CONFIG.getfloat("sensor", "PUBLISH_INTERVAL_S")
+if PUBLISH_INTERVAL_S <= 0:
+    raise ValueError("sensor.PUBLISH_INTERVAL_S must be greater than 0")
 
 
 def build_connection():
@@ -47,6 +56,15 @@ def main():
 
     try:
         while True:
+            CONFIG = configparser.ConfigParser()
+            CONFIG_PATH = Path(__file__).with_name("config.conf")
+            if not CONFIG.read(CONFIG_PATH):
+                raise FileNotFoundError(f"Configuration file not found: {CONFIG_PATH}")
+
+            PUBLISH_INTERVAL_S = CONFIG.getfloat("sensor", "PUBLISH_INTERVAL_S")
+            if PUBLISH_INTERVAL_S <= 0:
+                raise ValueError("sensor.PUBLISH_INTERVAL_S must be greater than 0")
+                
             try:
                 # Retrieve temperature (in Celsius) and relative humidity (%)
                 temperature_c = dht_sensor.temperature
