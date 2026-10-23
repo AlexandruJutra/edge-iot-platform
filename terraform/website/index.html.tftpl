@@ -68,6 +68,24 @@
       .readings { grid-template-columns: 1fr; }
     }
   </style>
+  <script>
+    let latestReading = null;
+
+    function updateColdAlert() {
+      const thresholdInput = document.getElementById('cold-threshold');
+      if (!thresholdInput || !latestReading) return;
+      // Capture the un-alerted <title> once, before the first mutation.
+      if (!updateColdAlert.originalTitleText) {
+        updateColdAlert.originalTitleText = document.title;
+      }
+      const threshold = parseFloat(thresholdInput.value);
+      if (Number.isFinite(threshold) && latestReading.temperature_c < threshold) {
+        document.title = "\uD83D\uDD25 Pune dom'le pe foc";
+      } else {
+        document.title = updateColdAlert.originalTitleText;
+      }
+    }
+  </script>
 </head>
 <body>
   <header>
@@ -103,20 +121,7 @@
 
   <footer>Data stored in DynamoDB, visualised with Grafana.</footer>
   <script>
-    const pageTitle = document.getElementById('page-title');
-    const originalTitleText = pageTitle.textContent;
     const thresholdInput = document.getElementById('cold-threshold');
-    let latestReading = null;
-
-    function updateColdAlert() {
-      if (!latestReading) return;
-      const threshold = parseFloat(thresholdInput.value);
-      if (Number.isFinite(threshold) && latestReading.temperature_c < threshold) {
-        pageTitle.textContent = "\uD83D\uDD25 Pune dom'le pe foc";
-      } else {
-        pageTitle.textContent = originalTitleText;
-      }
-    }
 
     thresholdInput.addEventListener('input', updateColdAlert);
 
