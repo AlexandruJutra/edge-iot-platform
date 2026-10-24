@@ -1,0 +1,17 @@
+build for docker on PI:
+
+BUILD:
+docker build -f dockerfile -t dht22-sensor:latest .
+
+build docker on Laptop or github actions:
+
+BUILD:
+docker buildx create --use --name pi-builder
+docker buildx build --platform linux/arm64 -f dht22.dockerfile -t dht22-sensor:latest --load .
+
+
+RUN:
+docker run --rm --privileged --device /dev/gpiochip0 --device /dev/gpiochip4 --device /dev/gpiomem -v /proc/cpuinfo:/proc/cpuinfo:ro -e IOT_PUBLISH_INTERVAL_S=60 dht22-sensor:latest
+
+EXEC:
+docker exec -it tender_brattain bash

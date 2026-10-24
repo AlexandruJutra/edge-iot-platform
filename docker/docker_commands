@@ -1,7 +1,0 @@
-command for docker:
-
-BUILD:
-docker build -f dockerfile -t dht22-sensor:latest .
-
-RUN:
-docker run --rm --privileged --device /dev/gpiochip0 --device /dev/gpiochip4 --device /dev/gpiomem -v /proc/cpuinfo:/proc/cpuinfo:ro dht22-sensor:latest

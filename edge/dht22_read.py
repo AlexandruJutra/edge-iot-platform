@@ -15,22 +15,14 @@ from awsiot import mqtt_connection_builder
 # generated terraform/certs/ directory).
 # ---------------------------------------------------------------------------
 IOT_ENDPOINT = "a2ees2p88l8a5j-ats.iot.eu-central-1.amazonaws.com"  # e.g. xxxxx-ats.iot.eu-central-1.amazonaws.com
-CLIENT_ID = os.environ.get("IOT_CLIENT_ID", "edge-dht22-sensor")
-TOPIC = os.environ.get("IOT_TOPIC", "edge/dht22/telemetry")
+CLIENT_ID = "edge-dht22-sensor"
+TOPIC = "edge/dht22/telemetry"
 
-CERT_PATH = os.environ.get("IOT_CERT_PATH", "/home/alex/edge-iot/certs/device.pem.crt")
-PRIVATE_KEY_PATH = os.environ.get("IOT_PRIVATE_KEY_PATH", "/home/alex/edge-iot/certs/private.pem.key")
-ROOT_CA_PATH = os.environ.get("IOT_ROOT_CA_PATH", "/home/alex/edge-iot/certs/AmazonRootCA1.pem")
+CERT_PATH = "/app/certs/device.pem.crt"
+PRIVATE_KEY_PATH = "/app/certs/private.pem.key"
+ROOT_CA_PATH = "/app/certs/AmazonRootCA1.pem"
 
-CONFIG = configparser.ConfigParser()
-CONFIG_PATH = Path(__file__).with_name("config.conf")
-if not CONFIG.read(CONFIG_PATH):
-    raise FileNotFoundError(f"Configuration file not found: {CONFIG_PATH}")
-
-PUBLISH_INTERVAL_S = CONFIG.getfloat("sensor", "PUBLISH_INTERVAL_S")
-if PUBLISH_INTERVAL_S <= 0:
-    raise ValueError("sensor.PUBLISH_INTERVAL_S must be greater than 0")
-
+PUBLISH_INTERVAL_S = float(os.environ.get("IOT_PUBLISH_INTERVAL_S", "300"))
 
 def build_connection():
     """Create an mTLS MQTT connection to AWS IoT Core."""
@@ -56,15 +48,9 @@ def main():
 
     try:
         while True:
-            CONFIG = configparser.ConfigParser()
-            CONFIG_PATH = Path(__file__).with_name("config.conf")
-            if not CONFIG.read(CONFIG_PATH):
-                raise FileNotFoundError(f"Configuration file not found: {CONFIG_PATH}")
 
-            PUBLISH_INTERVAL_S = CONFIG.getfloat("sensor", "PUBLISH_INTERVAL_S")
-            if PUBLISH_INTERVAL_S <= 0:
-                raise ValueError("sensor.PUBLISH_INTERVAL_S must be greater than 0")
-                
+            PUBLISH_INTERVAL_S = float(os.environ.get("IOT_PUBLISH_INTERVAL_S", "300"))
+            
             try:
                 # Retrieve temperature (in Celsius) and relative humidity (%)
                 temperature_c = dht_sensor.temperature
