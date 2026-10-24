@@ -8,7 +8,7 @@ import board
 import adafruit_dht
 from awscrt import mqtt
 from awsiot import mqtt_connection_builder
-
+#
 # ---------------------------------------------------------------------------
 # AWS IoT Core connection settings.
 # Provide these via environment variables (see the Terraform outputs and the

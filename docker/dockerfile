@@ -22,12 +22,11 @@ ENV RPI_LGPIO_REVISION=d03114
 ENV IOT_PUBLISH_INTERVAL_S=300
 
 # 4. Copy and install remaining Python dependencies (like Adafruit CircuitPython DHT)
-COPY requirements.txt .
+COPY docker/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # 5. Copy the rest of your application code
-COPY dht22_read.py . 
-COPY /certs/ /app/certs/
+COPY edge/dht22_read.py .
 
 # 6. Define the runtime command
 CMD ["python3", "dht22_read.py"]

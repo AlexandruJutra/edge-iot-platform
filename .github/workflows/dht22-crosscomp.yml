@@ -1,0 +1,41 @@
+name: Build DHT22 ARM64 image
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - edge/dht22_read.py
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    name: Build and publish DHT22 image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_PACKAGE_TOKEN }}
+
+      - name: Create buildx builder
+        run: docker buildx create --use --name pi-builder
+
+      - name: Build ARM64 image
+        run: docker buildx build --platform linux/arm64 -f docker/dockerfile -t dht22-sensor:latest --load .
+
+      - name: Push image to GHCR
+        run: |
+          docker tag dht22-sensor:latest ghcr.io/alexandrujutra/edge-iot-platform/dht22-sensor-crosscomp:latest
+          docker push ghcr.io/alexandrujutra/edge-iot-platform/dht22-sensor-crosscomp:latest
