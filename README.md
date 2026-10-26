@@ -59,6 +59,19 @@ python dht22_read.py
 In the AWS Console → IoT Core → **MQTT test client**, subscribe to
 `edge/dht22/telemetry` to see the JSON messages.
 
+To check that the telemetry endpoint has received a record newer than a given
+ISO-8601 action runner timestamp, run:
+
+```bash
+API_URL="$(cd terraform && terraform output -raw grafana_json_export_url)"
+python tests/check_grafana_timestamp.py "$API_URL" "2026-10-26T11:00:00Z"
+```
+
+The script checks the newest timestamp in the endpoint response once per second
+for up to 20 seconds. It exits successfully as soon as that timestamp is newer
+than the supplied action runner time; otherwise, it exits with a failure status
+after the timeout.
+
 ## GitHub Actions deployment
 
 The Terraform workflow uses a Tailscale OAuth client to connect to the edge

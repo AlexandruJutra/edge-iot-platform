@@ -77,6 +77,24 @@ jobs:
           chmod 600 ~/.ssh/device_key
           printf '%s\n' "$DEVICE_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
+      
+      # when running the destroy, make sure that every process using dht22 sensor is killed, to avoid resource conflicts between duplicate processes 
+      - name: Kill any running dht22 instances
+        if: inputs.action == 'apply' || inputs.action == 'plan-apply'
+        env:
+          DEVICE_HOST: ${{ secrets.DEVICE_HOST }}
+          DEVICE_SSH_USER: ${{ secrets.DEVICE_SSH_USER }}
+        run: |
+            ssh -i ~/.ssh/device_key \
+            -o StrictHostKeyChecking=yes \
+            "$DEVICE_SSH_USER@$DEVICE_HOST" \
+            'docker kill dht22_container || true'
+
+      - name: Capture action runner UTC time
+        run: |
+          ACTION_RUNNER_TIME="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          echo "ACTION_RUNNER_TIME=$ACTION_RUNNER_TIME" >> "$GITHUB_ENV"
+          echo "Action runner time: $ACTION_RUNNER_TIME"
 
       - name: Copy certificates to Raspberry Pi
         if: inputs.action == 'apply' || inputs.action == 'plan-apply'
@@ -110,20 +128,13 @@ jobs:
           ssh -i ~/.ssh/device_key \
             -o StrictHostKeyChecking=yes \
             "$DEVICE_SSH_USER@$DEVICE_HOST" \
-            docker run --rm --privileged --device /dev/gpiochip0 --device /dev/gpiochip4 --device /dev/gpiomem -v /proc/cpuinfo:/proc/cpuinfo:ro --mount type=bind,source=/home/alex/edge-iot/certs,target=/app/certs,readonly -e IOT_PUBLISH_INTERVAL_S=600 dht22-sensor:latest
-      
+            docker pull ghcr.io/alexandrujutra/edge-iot-platform/dht22-sensor-crosscomp:latest
 
-      # when running the destroy, make sure that every process using dht22 sensor is killed, to avoid resource conflicts between duplicate processes 
-      - name: Kill any running dht22 instances
-        if: inputs.action == 'destroy'
-        env:
-          DEVICE_HOST: ${{ secrets.DEVICE_HOST }}
-          DEVICE_SSH_USER: ${{ secrets.DEVICE_SSH_USER }}
-        run: |
-            ssh -i ~/.ssh/device_key \
+          ssh -i ~/.ssh/device_key \
             -o StrictHostKeyChecking=yes \
             "$DEVICE_SSH_USER@$DEVICE_HOST" \
-            'pkill -f "[d]ht22_read.py" || true'
+            docker run -d --rm --name dht22_container --privileged --device /dev/gpiochip0 --device /dev/gpiochip4 --device /dev/gpiomem -v /proc/cpuinfo:/proc/cpuinfo:ro --mount type=bind,source=/home/alex/edge-iot/certs,target=/app/certs,readonly -e IOT_PUBLISH_INTERVAL_S=600 dht22-sensor:latest
+
   
       - name: Terraform destroy
         if: inputs.action == 'destroy'
@@ -144,3 +155,9 @@ jobs:
             echo "- Website: $WEBSITE_URL"
             echo "- API Gateway: $API_URL"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Check Grafana telemetry timestamp
+        if: inputs.action == 'plan-apply'
+        run: |
+          API_URL="$(terraform output -raw grafana_json_export_url)"
+          python ../tests/check_grafana_timestamp.py "$API_URL" "$ACTION_RUNNER_TIME"
