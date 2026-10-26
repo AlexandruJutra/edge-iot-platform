@@ -110,7 +110,8 @@ jobs:
           ssh -i ~/.ssh/device_key \
             -o StrictHostKeyChecking=yes \
             "$DEVICE_SSH_USER@$DEVICE_HOST" \
-            'nohup bash -c "source /home/alex/.venv/bin/activate && python3 /home/alex/py_scripts/dht22_read.py" > /dev/null 2>&1 &'
+            docker run --rm --privileged --device /dev/gpiochip0 --device /dev/gpiochip4 --device /dev/gpiomem -v /proc/cpuinfo:/proc/cpuinfo:ro --mount type=bind,source=/home/alex/edge-iot/certs,target=/app/certs,readonly -e IOT_PUBLISH_INTERVAL_S=600 dht22-sensor:latest
+      
 
       # when running the destroy, make sure that every process using dht22 sensor is killed, to avoid resource conflicts between duplicate processes 
       - name: Kill any running dht22 instances
