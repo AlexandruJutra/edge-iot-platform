@@ -1,0 +1,9 @@
+"iot-telemetry": {
+      "command": "C:/workspace/rasp_ubuntu/edge-iot-platform/.venv/Scripts/python.exe",
+      "args": [
+        "C:/workspace/rasp_ubuntu/edge-iot-platform/MCP-server/iot_telemetry_server.py"
+      ],
+      "env": {
+        "AWS_DEFAULT_REGION": "eu-central-1"
+      }
+    },

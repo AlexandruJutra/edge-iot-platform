@@ -1,92 +1,71 @@
-# Edge → AWS IoT Core (DHT22)
+# Edge IoT Platform
 
-Small Terraform project that provisions an AWS IoT Core **thing**, an X.509
-**certificate** for MQTT (mutual TLS), an IoT **policy**, and a DynamoDB table
-for telemetry. An IoT rule stores messages published to
-`edge/dht22/telemetry` in the table.
+A Raspberry Pi monitoring project that collects DHT22 temperature and humidity
+readings, sends them to AWS, and displays the latest measurements in a web dashboard.
 
-## Layout
+## How It Works
 
-```
-edge/        Python sensor publisher (runs on the Raspberry Pi / edge device)
-terraform/   AWS IoT Core infrastructure
-```
-
-## 1. Provision AWS IoT Core
-
-```bash
-cd terraform
-terraform init
-terraform apply
+```text
+DHT22 -> Raspberry Pi -> AWS IoT Core -> DynamoDB
+																					|
+																			 Lambda
+																					|
+																		 API Gateway
+																					|
+																 Web dashboard / Grafana
 ```
 
-Terraform writes the device certificate, private key and Amazon Root CA into
-`terraform/certs/` and prints the MQTT endpoint:
+- **Sensor:** A Python application reads the DHT22 on GPIO 4 and publishes
+	temperature in Celsius and Fahrenheit, humidity, a device ID, and a timestamp.
+- **Secure messaging:** MQTT uses device certificates for mutual TLS and publishes
+	to `edge/dht22/telemetry`.
+- **Storage:** An AWS IoT rule timestamps incoming readings in UTC and stores them
+	in an existing DynamoDB table.
+- **API:** Lambda exposes stored telemetry as JSON through `GET /telemetry`, usable
+	by the dashboard and Grafana's Infinity data source. This endpoint is unauthenticated.
+- **Dashboard:** A static site served through CloudFront shows the latest
+	temperature, humidity, and reading time. It refreshes every 10 minutes and changes
+	the browser tab title when the temperature falls below an adjustable threshold.
+	An optional link opens an external Grafana dashboard.
 
-```bash
-terraform output iot_endpoint
-```
+## Automation
 
-Telemetry is stored in the `edge-dht22-telemetry` DynamoDB table, using string
-attributes `device_id` and `timestamp` as its partition and sort keys.
+GitHub Actions provides two main workflows:
 
-> The certificate/keys and `*.tfstate` are git-ignored because they are secrets.
+- **Build DHT22 ARM64 image:** Builds the sensor container for the Raspberry Pi and
+	publishes it to GitHub Container Registry. Runs manually or when the sensor script changes.
+- **Terraform IoT Core:** Supports `plan`, `apply`, `plan-apply`, and `destroy`.
+	Deployment provisions AWS resources, connects to the Pi through Tailscale and SSH,
+	copies device certificates, and starts the telemetry container. The configured
+	publishing interval is 10 minutes. A `plan-apply` run also checks for fresh telemetry.
 
-## 2. Run the edge publisher
+The deployment workflow reports the website and API URLs in its run summary.
 
-On the edge device (where the DHT22 is wired to GPIO 4 / BCM 4):
+## Requirements
 
-```bash
-cd edge
-export IOT_ENDPOINT="$(cd ../terraform && terraform output -raw iot_endpoint)"
-python dht22_read.py
-```
+- A Raspberry Pi with Docker, Tailscale, and a DHT22 connected to GPIO 4.
+- An AWS account, the existing telemetry DynamoDB table, and the configured S3
+	Terraform state bucket.
+- GitHub Actions secrets for AWS access, Tailscale OAuth, device SSH access, and
+	container registry publishing.
 
-### Configuration (environment variables)
+The sensor's AWS IoT endpoint is currently set in [edge/dht22_read.py](edge/dht22_read.py).
+The container reads certificates from `/app/certs`; `IOT_PUBLISH_INTERVAL_S` controls
+the publishing interval (default: 5 minutes).
 
-| Variable                | Default                               | Description                         |
-| ----------------------- | ------------------------------------- | ----------------------------------- |
-| `IOT_ENDPOINT`          | _(required)_                          | AWS IoT ATS data endpoint           |
-| `IOT_CLIENT_ID`         | `edge-dht22-sensor`                   | MQTT client id                      |
-| `IOT_TOPIC`             | `edge/dht22/telemetry`                | MQTT topic to publish to            |
-| `IOT_CERT_PATH`         | `../terraform/certs/device.pem.crt`   | Device certificate                  |
-| `IOT_PRIVATE_KEY_PATH`  | `../terraform/certs/private.pem.key`  | Device private key                  |
-| `IOT_ROOT_CA_PATH`      | `../terraform/certs/AmazonRootCA1.pem`| Amazon Root CA                      |
-| `IOT_PUBLISH_INTERVAL_S`| `5`                                   | Seconds between publishes           |
+## Project Layout
 
-## 3. Verify
+| Directory | Purpose |
+| --- | --- |
+| [edge/](edge/) | Python sensor publisher |
+| [docker/](docker/) | Sensor container image and dependencies |
+| [terraform/](terraform/) | AWS infrastructure and dashboard template |
+| [lambda/](lambda/) | Telemetry JSON export |
+| [tests/](tests/) | Fresh-telemetry verification script |
+| [.github/workflows/](.github/workflows/) | Build, deployment, and device workflows |
 
-In the AWS Console → IoT Core → **MQTT test client**, subscribe to
-`edge/dht22/telemetry` to see the JSON messages.
+## Teardown
 
-To check that the telemetry endpoint has received a record newer than a given
-ISO-8601 action runner timestamp, run:
-
-```bash
-API_URL="$(cd terraform && terraform output -raw grafana_json_export_url)"
-python tests/check_grafana_timestamp.py "$API_URL" "2026-10-26T11:00:00Z"
-```
-
-The script checks the newest timestamp in the endpoint response once per second
-for up to 20 seconds. It exits successfully as soon as that timestamp is newer
-than the supplied action runner time; otherwise, it exits with a failure status
-after the timeout.
-
-## GitHub Actions deployment
-
-The Terraform workflow uses a Tailscale OAuth client to connect to the edge
-device. Configure an OAuth client with the `auth_keys` scope and permission to
-use `tag:github-actions`, then add these as GitHub Actions repository secrets:
-
-- `TS_OAUTH_CLIENT_ID`
-- `TS_OAUTH_SECRET`
-
-The previous `TS_AUTHKEY` secret is no longer used by the workflow and can be
-removed.
-
-## Cleanup
-
-```bash
-cd terraform
-terraform destroy
-```
+Run the Terraform workflow with `destroy` to remove Terraform-managed AWS resources.
+The DynamoDB table is managed separately and its stored readings are preserved.
+Device certificates and private keys must not be committed to Git.

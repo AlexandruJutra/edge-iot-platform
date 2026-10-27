@@ -1,0 +1,16 @@
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfvars
+
+# Generated device certificates and keys
+certs/
+
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd

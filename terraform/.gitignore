@@ -8,3 +8,9 @@ crash.log
 
 # Generated device certificates and keys
 certs/
+
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd

@@ -2,9 +2,9 @@ name: Build DHT22 ARM64 image
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - edge/dht22_read.py
+  # push:
+  #   paths:
+  #     - edge/dht22_read.py
 
 permissions:
   contents: read
