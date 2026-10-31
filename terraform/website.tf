@@ -3,6 +3,20 @@
 # ---------------------------------------------------------------------------
 data "aws_caller_identity" "current" {}
 
+data "aws_acm_certificate" "website" {
+  provider    = aws.us_east_1
+  domain      = var.website_domain_name
+  statuses    = ["ISSUED"]
+  most_recent = true
+
+  lifecycle {
+    postcondition {
+      condition     = self.arn == var.website_certificate_arn
+      error_message = "The issued ACM certificate for the website domain does not match WEBSITE_CERTIFICATE_ARN."
+    }
+  }
+}
+
 locals {
   index_html = templatefile("${path.module}/website/index.html.tftpl", {
     grafana_embed_url = var.grafana_embed_url
@@ -43,6 +57,7 @@ resource "aws_cloudfront_distribution" "website" {
   default_root_object = "index.html"
   price_class         = "PriceClass_100"
   comment             = "${var.project_name} static website"
+  aliases             = [var.website_domain_name]
 
   origin {
     domain_name              = aws_s3_bucket.website.bucket_regional_domain_name
@@ -66,7 +81,9 @@ resource "aws_cloudfront_distribution" "website" {
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = true
+    acm_certificate_arn      = data.aws_acm_certificate.website.arn
+    ssl_support_method       = "sni-only"
+    minimum_protocol_version = "TLSv1.2_2021"
   }
 }
 
@@ -97,8 +114,8 @@ resource "aws_s3_bucket_policy" "website" {
 }
 
 output "website_url" {
-  description = "HTTPS URL of the CloudFront-served static website."
-  value       = "https://${aws_cloudfront_distribution.website.domain_name}"
+  description = "HTTPS URL of the custom website domain."
+  value       = "https://${var.website_domain_name}"
 }
 
 output "website_bucket_name" {

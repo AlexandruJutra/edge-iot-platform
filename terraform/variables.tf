@@ -27,3 +27,15 @@ variable "grafana_embed_url" {
   type        = string
   default     = "https://lankyjungle1504.grafana.net/public-dashboards/35a0ace6a5cd4c3b99083b3190480bee"
 }
+
+variable "website_domain_name" {
+  description = "Custom domain name served by the CloudFront website."
+  type        = string
+  default     = "jutraalex.com"
+}
+
+variable "website_certificate_arn" {
+  description = "Expected ARN of the existing issued ACM certificate in us-east-1."
+  type        = string
+  sensitive   = true
+}

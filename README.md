@@ -47,7 +47,10 @@ The deployment workflow reports the website and API URLs in its run summary.
 - An AWS account, the existing telemetry DynamoDB table, and the configured S3
 	Terraform state bucket.
 - GitHub Actions secrets for AWS access, Tailscale OAuth, device SSH access, and
-	container registry publishing.
+	container registry publishing. Add `WEBSITE_CERTIFICATE_ARN` with the ARN of
+	the issued ACM certificate for `jutraalex.com` in `us-east-1`; Terraform looks
+	up that certificate and verifies it matches the secret before configuring
+	CloudFront. Point the domain's DNS record at the CloudFront distribution.
 
 The sensor's AWS IoT endpoint is currently set in [edge/dht22_read.py](edge/dht22_read.py).
 The container reads certificates from `/app/certs`; `IOT_PUBLISH_INTERVAL_S` controls

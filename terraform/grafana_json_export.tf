@@ -90,7 +90,7 @@ resource "aws_apigatewayv2_api" "grafana_json_export" {
   protocol_type = "HTTP"
 
   cors_configuration {
-    allow_origins = ["https://${aws_cloudfront_distribution.website.domain_name}"]
+    allow_origins = ["https://${var.website_domain_name}"]
     allow_methods = ["GET"]
     allow_headers = ["content-type"]
   }

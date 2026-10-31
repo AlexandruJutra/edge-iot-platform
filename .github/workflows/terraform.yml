@@ -24,6 +24,8 @@ jobs:
     permissions:
       id-token: write # required for AWS OIDC authentication
       contents: read
+    env:
+      TF_VAR_website_certificate_arn: ${{ secrets.WEBSITE_CERTIFICATE_ARN }}
 
     defaults:
       run:
