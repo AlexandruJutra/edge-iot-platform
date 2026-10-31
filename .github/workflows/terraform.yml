@@ -26,6 +26,8 @@ jobs:
       contents: read
     env:
       TF_VAR_website_certificate_arn: ${{ secrets.WEBSITE_CERTIFICATE_ARN }}
+      TF_VAR_website_distribution_id: ${{ vars.WEBSITE_CLOUDFRONT_DISTRIBUTION_ID }}
+      TF_VAR_website_oac_id: ${{ vars.WEBSITE_CLOUDFRONT_OAC_ID }}
 
     defaults:
       run:

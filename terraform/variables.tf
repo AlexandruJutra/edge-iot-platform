@@ -39,3 +39,13 @@ variable "website_certificate_arn" {
   type        = string
   sensitive   = true
 }
+
+variable "website_distribution_id" {
+  description = "ID of the existing CloudFront distribution serving the website."
+  type        = string
+}
+
+variable "website_oac_id" {
+  description = "ID of the existing CloudFront origin access control for the website."
+  type        = string
+}

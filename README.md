@@ -51,6 +51,13 @@ The deployment workflow reports the website and API URLs in its run summary.
 	the issued ACM certificate for `jutraalex.com` in `us-east-1`; Terraform looks
 	up that certificate and verifies it matches the secret before configuring
 	CloudFront. Point the domain's DNS record at the CloudFront distribution.
+- Add the non-sensitive GitHub Actions repository variables
+	`WEBSITE_CLOUDFRONT_DISTRIBUTION_ID` and `WEBSITE_CLOUDFRONT_OAC_ID` for the
+	existing CloudFront distribution and its S3 origin access control. Terraform
+	reads both as data sources, so `terraform destroy` leaves them in AWS. The
+	distribution's existing S3 origin points to the website bucket's stable
+	regional endpoint; Terraform destroys and recreates the bucket, website object,
+	and bucket policy.
 
 The sensor's AWS IoT endpoint is currently set in [edge/dht22_read.py](edge/dht22_read.py).
 The container reads certificates from `/app/certs`; `IOT_PUBLISH_INTERVAL_S` controls

@@ -17,6 +17,25 @@ data "aws_acm_certificate" "website" {
   }
 }
 
+data "aws_cloudfront_distribution" "website" {
+  id = var.website_distribution_id
+}
+
+data "aws_cloudfront_origin_access_control" "website" {
+  id = var.website_oac_id
+
+  lifecycle {
+    postcondition {
+      condition = (
+        self.origin_access_control_origin_type == "s3" &&
+        self.signing_behavior == "always" &&
+        self.signing_protocol == "sigv4"
+      )
+      error_message = "The website CloudFront OAC must use S3 origins, always sign requests, and use SigV4."
+    }
+  }
+}
+
 locals {
   index_html = templatefile("${path.module}/website/index.html.tftpl", {
     grafana_embed_url = var.grafana_embed_url
@@ -45,45 +64,19 @@ resource "aws_s3_object" "index" {
   etag         = md5(local.index_html)
 }
 
-resource "aws_cloudfront_origin_access_control" "website" {
-  name                              = "${var.project_name}-website-oac"
-  origin_access_control_origin_type = "s3"
-  signing_behavior                  = "always"
-  signing_protocol                  = "sigv4"
+removed {
+  from = aws_cloudfront_origin_access_control.website
+
+  lifecycle {
+    destroy = false
+  }
 }
 
-resource "aws_cloudfront_distribution" "website" {
-  enabled             = true
-  default_root_object = "index.html"
-  price_class         = "PriceClass_100"
-  comment             = "${var.project_name} static website"
-  aliases             = [var.website_domain_name]
+removed {
+  from = aws_cloudfront_distribution.website
 
-  origin {
-    domain_name              = aws_s3_bucket.website.bucket_regional_domain_name
-    origin_id                = "s3-website"
-    origin_access_control_id = aws_cloudfront_origin_access_control.website.id
-  }
-
-  default_cache_behavior {
-    target_origin_id       = "s3-website"
-    viewer_protocol_policy = "redirect-to-https"
-    allowed_methods        = ["GET", "HEAD"]
-    cached_methods         = ["GET", "HEAD"]
-    cache_policy_id        = "658327ea-f89d-4fab-a63d-7e88639e58f6" # Managed-CachingOptimized
-    compress               = true
-  }
-
-  restrictions {
-    geo_restriction {
-      restriction_type = "none"
-    }
-  }
-
-  viewer_certificate {
-    acm_certificate_arn      = data.aws_acm_certificate.website.arn
-    ssl_support_method       = "sni-only"
-    minimum_protocol_version = "TLSv1.2_2021"
+  lifecycle {
+    destroy = false
   }
 }
 
@@ -103,7 +96,7 @@ resource "aws_s3_bucket_policy" "website" {
         Resource = "${aws_s3_bucket.website.arn}/*"
         Condition = {
           StringEquals = {
-            "AWS:SourceArn" = aws_cloudfront_distribution.website.arn
+            "AWS:SourceArn" = data.aws_cloudfront_distribution.website.arn
           }
         }
       }
