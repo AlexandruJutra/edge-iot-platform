@@ -53,4 +53,4 @@ def analyze_environmental_correlation(start_iso: str, end_iso: str) -> dict:
 
 if __name__ == "__main__":
     # Run using Streamable HTTP transport on port 8000
-    mcp.run()
+    mcp.run(transport="sse", host="0.0.0.0", port=8000)
