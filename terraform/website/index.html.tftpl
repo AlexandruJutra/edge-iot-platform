@@ -177,8 +177,8 @@
 
       fetch('https://jutraalex.com/mcp', {
         method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-        body: message
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message })
       })
         .then(response => {
           if (!response.ok) throw new Error('Message request failed');
