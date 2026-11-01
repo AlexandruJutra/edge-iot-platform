@@ -47,6 +47,34 @@
     .reading-status { padding: 0 1rem 1rem; margin: 0; color: #8b95a1; }
     .placeholder { padding: 2rem 1rem; color: #8b95a1; text-align: center; }
     footer { color: #8b95a1; font-size: 0.85rem; text-align: center; }
+    .message-form { padding: 1rem; border-top: 1px solid #2a323c; }
+    .message-form label { display: block; margin-bottom: 0.5rem; color: #8b95a1; font-size: 0.9rem; }
+    .message-form textarea {
+      display: block;
+      width: 100%;
+      min-height: 5rem;
+      padding: 0.65rem;
+      background: #0f1419;
+      border: 1px solid #2a323c;
+      border-radius: 4px;
+      color: #e6e8eb;
+      font: inherit;
+      resize: vertical;
+    }
+    .message-form button {
+      margin-top: 0.65rem;
+      padding: 0.55rem 0.8rem;
+      border: 0;
+      border-radius: 4px;
+      background: #5aa9ff;
+      color: #0f1419;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .message-form button:hover { background: #83bdff; }
+    .message-form button:disabled { cursor: wait; opacity: 0.65; }
+    .message-status { min-height: 1.25rem; margin: 0.65rem 0 0; color: #8b95a1; font-size: 0.9rem; }
     .threshold-control {
       display: flex;
       align-items: center;
@@ -115,6 +143,12 @@
           <p class="reading-value"><span id="humidity">--</span> %</p>
         </section>
       </div>
+      <form class="message-form" id="message-form">
+        <label for="mcp-message">Send a message</label>
+        <textarea id="mcp-message" name="message" required></textarea>
+        <button type="submit">Send</button>
+        <p class="message-status" id="message-status" aria-live="polite"></p>
+      </form>
       <p class="reading-status" id="reading-status">Loading latest reading...</p>
     </section>
   </main>
@@ -124,6 +158,40 @@
     const thresholdInput = document.getElementById('cold-threshold');
 
     thresholdInput.addEventListener('input', updateColdAlert);
+
+    const messageForm = document.getElementById('message-form');
+    const messageInput = document.getElementById('mcp-message');
+    const messageStatus = document.getElementById('message-status');
+    const messageButton = messageForm.querySelector('button[type="submit"]');
+
+    messageForm.addEventListener('submit', event => {
+      event.preventDefault();
+      const message = messageInput.value.trim();
+      if (!message) {
+        messageInput.focus();
+        return;
+      }
+
+      messageButton.disabled = true;
+      messageStatus.textContent = 'Sending...';
+
+      fetch('https://jutraalex.com/mcp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+        body: message
+      })
+        .then(response => {
+          if (!response.ok) throw new Error('Message request failed');
+          messageInput.value = '';
+          messageStatus.textContent = 'Message sent.';
+        })
+        .catch(() => {
+          messageStatus.textContent = 'Unable to send the message. Please try again.';
+        })
+        .finally(() => {
+          messageButton.disabled = false;
+        });
+    });
 
     const FETCH_INTERVAL_MS = 10 * 60 * 1000;
 

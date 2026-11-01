@@ -26,6 +26,7 @@ DHT22 -> Raspberry Pi -> AWS IoT Core -> DynamoDB
 - **Dashboard:** A static site served through CloudFront shows the latest
 	temperature, humidity, and reading time. It refreshes every 10 minutes and changes
 	the browser tab title when the temperature falls below an adjustable threshold.
+	It also provides a message box that posts text to `https://jutraalex.com/mcp`.
 	An optional link opens an external Grafana dashboard.
 
 ## Automation
