@@ -182,8 +182,7 @@
       })
         .then(async response => {
           const responseBody = await response.text();
-          messageStatus.textContent =
-            'HTTP ' + response.status + ': ' + (responseBody || '(no response body)');
+          messageStatus.textContent = responseBody;
           if (response.ok) messageInput.value = '';
         })
         .catch(() => {
