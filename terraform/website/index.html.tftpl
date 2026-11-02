@@ -74,7 +74,7 @@
     }
     .message-form button:hover { background: #83bdff; }
     .message-form button:disabled { cursor: wait; opacity: 0.65; }
-    .message-status { min-height: 1.25rem; margin: 0.65rem 0 0; color: #8b95a1; font-size: 0.9rem; }
+    .message-status { min-height: 1.25rem; margin: 0.65rem 0 0; color: #8b95a1; font-size: 0.9rem; white-space: pre-wrap; overflow-wrap: anywhere; }
     .threshold-control {
       display: flex;
       align-items: center;
@@ -180,10 +180,11 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message })
       })
-        .then(response => {
-          if (!response.ok) throw new Error('Message request failed');
-          messageInput.value = '';
-          messageStatus.textContent = 'Message sent.';
+        .then(async response => {
+          const responseBody = await response.text();
+          messageStatus.textContent =
+            'HTTP ' + response.status + ': ' + (responseBody || '(no response body)');
+          if (response.ok) messageInput.value = '';
         })
         .catch(() => {
           messageStatus.textContent = 'Unable to send the message. Please try again.';
