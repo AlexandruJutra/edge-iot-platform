@@ -28,7 +28,7 @@ async def handle_mcp_post(request: Request):
   try:
     # Folosește calea absolută pentru a evita eroarea de tip PATH
     result = subprocess.run(
-        [CLAUDE_BIN, "-p", "--model", "claude-haiku-5-5", user_message],
+        [CLAUDE_BIN, "-p", " --dangerously-skip-permissions", "--model", "claude-haiku-5-5", user_message],
         capture_output=True,
         text=True,
         check=True,
