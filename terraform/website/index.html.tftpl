@@ -49,6 +49,9 @@
     footer { color: #8b95a1; font-size: 0.85rem; text-align: center; }
     .message-form { padding: 1rem; border-top: 1px solid #2a323c; }
     .message-form label { display: block; margin-bottom: 0.5rem; color: #8b95a1; font-size: 0.9rem; }
+    .message-intro { margin: 0 0 0.75rem; color: #8b95a1; font-size: 0.9rem; }
+    .prompt-ideas { margin: 0 0 1rem; padding-left: 1.25rem; color: #8b95a1; font-size: 0.9rem; }
+    .prompt-ideas li + li { margin-top: 0.35rem; }
     .message-form textarea {
       display: block;
       width: 100%;
@@ -144,7 +147,14 @@
         </section>
       </div>
       <form class="message-form" id="message-form">
-        <label for="mcp-message">Send a message</label>
+        <label for="mcp-message">Talk with Claude</label>
+        <p class="message-intro">MCP server running in the background. Prompt ideas:</p>
+        <ul class="prompt-ideas">
+          <li>Give me the latest temperature and humidity reading.</li>
+          <li>Give me the average temperature on October 28th.</li>
+          <li>Given the telemetry data, is there any correlation between temperature and humidity on 29th October?</li>
+          <li>Take 10 samples every 2 seconds and give them to me.</li>
+        </ul>
         <textarea id="mcp-message" name="message" required></textarea>
         <button type="submit">Send</button>
         <p class="message-status" id="message-status" aria-live="polite"></p>

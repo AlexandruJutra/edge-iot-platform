@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "my-local-server": {
+      "command": "uv",
+      "args": ["run", "/home/alex/MCP-server/iot_telemetry_server.py"],
+      "autoApprove": ["get_latest_telemetry", "get_telemetry_range", "analyze_environmental_correlation"]
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "theme": "auto",
+  "permissions": {
+    "allow": [
+      "mcp__my-local-server__*"
+    ]
+  }
+}
