@@ -61,7 +61,7 @@ Receive the response:
 
 ## MCP Server on the Raspberry Pi
 
-A Model Context Protocol (MCP) server ([MCP-server/iot_telemetry_server.py](MCP-server/iot_telemetry_server.py)) runs on the Pi in Docker ([MCP-server/docker-compose.yml](MCP-server/docker-compose.yml)) and listens on port `8000` (SSE transport). It reads DynamoDB directly and exposes these tools to Claude:
+A Model Context Protocol (MCP) server ([MCP-server/iot_telemetry_server.py](MCP-server/iot_telemetry_server.py)) runs directly on the Pi (not in a container), served by **uvicorn** on port `8000` (SSE transport). It reads DynamoDB directly and exposes these tools to Claude:
 
 | Tool | Description |
 |------|-------------|
@@ -73,10 +73,11 @@ Start it on the Pi:
 
 ```bash
 cd MCP-server
-docker compose up -d --build
+pip install -r requirements.txt
+python iot_telemetry_server.py
 ```
 
-AWS credentials are mounted read-only from `~/.aws` on the Pi.
+AWS credentials are read from `~/.aws` on the Pi.
 
 ### Asking Claude questions
 
